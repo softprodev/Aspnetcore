@@ -1,5 +1,6 @@
 ## Introduction
-There are three different test frameworks are supported for unit test with asp.net core: MSTest, xUnit and NUnit that allow us to test our code in consistent way. In this article I will explain about the unit test in asp.net core using MSTest.
+There are three different test frameworks are supported for unit test with asp.net core: MSTest, xUnit and NUnit that allow us to test our code in consistent way. In this article, I will explain about the unit test in asp.net core using xUnit.
+the XUnit is an open souce test framework and main focus of this framework are extensibility and flexibility. It follows more community focus to being expand.
 
 To demonstrate the example of unit test, I have created MVC project, solution and Unit test project by using CLI (Command Line Interface). To create MVC and Test project, I am following below steps
 
@@ -15,36 +16,36 @@ To demonstrate the example of unit test, I have created MVC project, solution an
 ```
 >dotnet sln add Unittest\Unittest.csproj
 ```
-4) Create MsTest Project: Using following command, we can create MSTest project.
+4) Create XUnit test project: Using following command, we can create XUnit test project.
 ```
->dotnet new mstest
+>dotnet new xUnit
 ```
-This command is create MSTest Project and generated template configures Test runner into .csproj file
+This command creates XUnit Test Project and generated template configures Test runner into .csproj file
 ```
 <ItemGroup>
-  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
-  <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
-  <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+  <PackageReference Include="xunit" Version="2.3.1" />
+  <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+  <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
 </ItemGroup>
 ```
-The generated code also has dummy unittest file. It looks as following
-
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+The generated code also has dummy unit test file. It looks as following
 ```
-namespace Testproject
+using Xunit;
+
+namespace TestProject
 {
-    [TestClass]
     public class UnitTest1
     {
-        [TestMethod]
-        public void TestMethod1()
+        [Fact]
+        public void Test1()
         {
-            
+
         }
     }
 }
 ```
-The TestClass attribute denotes the class which contains unit tests and TestMethod attribute denoted a method is a test method. 
+As compare to MsTest, XUnit has Fact attribute that is applied to a method to indicate that it is a fact that should be run by the test runner. 
 
 5) Adding test project to solution 
 ```
@@ -72,80 +73,82 @@ public string GetEmployeeName(int empId)
     return name;
 }
 ```
+
 In the following test method, I have pass hardcoded value and check result using Assert class. 
 
 Unittest1.cs
 ```
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Unittest.Controllers;
+using UnitTest.Controllers;
+using Xunit;
 
-namespace TestProject1
+namespace TestProject
 {
-    [TestClass]
     public class UnitTest1
     {
-        [TestMethod]
-        public void TestMethod1()
+        [Fact]
+        public void Test1()
         {
             HomeController home = new HomeController();
             string result = home.GetEmployeeName(1);
-            Assert.AreEqual(result, "Jignesh");
+            Assert.Equal("Jignesh", result);
         }
     }
 }
 ```
-
 Final step is to run the Unit test. Using following command, we can run our all test cases.
 ```
 >dotnet test
+>dotnet test --filter "FullyQualifiedName=TestProject.UnitTest1.Test1"
 ```
 Result
-5.png
+
+![alt text](ScreenShots/5.png "")
 
 We also run all test cases or individual test within visual studio using Test Explore.
-8.png 
+![alt text](ScreenShots/1.png "")
 
 In the preceding example, my test result (actual) is match with expected result. In following example, my actual result is not match with expected result.
 ```
-[TestMethod]
-public void TestMethod2()
+[Fact]
+public void Test2()
 {
     HomeController home = new HomeController();
-    string result = home.GetEmployeeName(2);
-    Assert.AreEqual(result, "Jignesh");
+    string result = home.GetEmployeeName(1);
+    Assert.Equal("Rakesh", result);
 }
 ```
 Result
-6.png
+![alt text](ScreenShots/6.png "")
 
-To unit test every block of code, we require more test data. We can add more test method using TestMethod attribute, but it is very tedious job. The MSTest project is also support other attribute which enable us to write a suite for similar test. A DataTestMethod attributes represent a suite of tests which execute the same code with different input arguments. A DataRow attribute can be used for specifying the values for those inputs. Instead of creating new test, we can use these two attributes: DataTestMethod and DataRow to create a single data driven test.  
+To unit test every block of code, we require more test data. We can add more test method using Fact attribute, but it is very tedious job. The XUnit is also support other attribute which enable us to write a suite for similar test. A Theory attribute can be applied to the test that can take test data directly using InlineData attribute or excel spread sheet.  Instead of creating new test, we can use these two attributes: Theory and InlineData to create a single data driven test.  
+
 ```
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Unittest.Controllers;
+using UnitTest.Controllers;
+using Xunit;
 
 namespace TestProject1
 {
-    [TestClass]
-    public class UnitTest2
+    public class UnitTest1
     {
-        [DataTestMethod]
-        [DataRow(1, "Jignesh")]
-        [DataRow(2, "Rakesh")]
-        [DataRow(3, "Not Found")]
-        public void TestMethod1(int empId, string name)
+        [Theory]
+        [InlineData(1, "Jignesh")]
+        [InlineData(2, "Rakesh")]
+        [InlineData(3, "Not Found")]
+        public void Test3(int empId, string name)
         {
             HomeController home = new HomeController();
             string result = home.GetEmployeeName(empId);
-            Assert.AreEqual(result, name);
+            Assert.Equal(name, result);
         }
     }
 }
 ```
-Result
-7.png
 
-### Unit test with ILogger 
-The .net core support built-in dependency injection. So whatever the services, we want to use during the execution of the code are injected as dependency. One of the best example is ILogger service. Using following code, we can configure ILogger service in our asp.net core project.
+Result
+![alt text](ScreenShots/7.png "")
+
+Unit test with ILogger 
+The .net core support built-in dependency injection. So, whatever the services, we want to use during the execution of the code are injected as dependency. One of the best example is ILogger service. Using following code, we can configure ILogger service in our asp.net core project.
 
 Configure ILogger in Program.cs
 ```
@@ -193,7 +196,7 @@ namespace Unittest.Controllers
         
         public string GetMessage()
         {
-           _logger.LogDebug("Index Method Called!!!");
+           _logger.LogDebug("Test Method Called!!!");
             return "Hi! Reader";
         }
     }
@@ -204,8 +207,8 @@ To unit test controller having dependency on ILogger service, we have to pass IL
 
 In the following code, I have created service provider object and create ILogger object.
 ```
-[TestMethod]
-public void TestMethod4()
+[Fact]
+public void Test4()
 {
     var serviceProvider = new ServiceCollection()
         .AddLogging()
@@ -216,9 +219,16 @@ public void TestMethod4()
     var logger = factory.CreateLogger<TestController>();
     TestController home = new TestController(logger);
     string result = home.GetMessage();
-    Assert.AreEqual(result, "Hi! Reader");
+    Assert.Equal("Hi! Reader", result);
 }
 ```
 
 ### Summary
-Unit test is a code that helps us in verifying the expected behavior of the other code in isolation. Here “In isolation" means there is no dependency between the tests. This is a better idea to test the Application code, before it goes for quality assurance (QA). 
+Unit test is a code that helps us in verifying the expected behavior of the other code in isolation. Here “In isolation" means there is no dependency between the tests. This is a better idea to test the Application code, before it goes for quality assurance (QA). All Unit test frameworks, MSTest, XUnit and NUnit, offer a similar end goal and help us to write unit test simpler, easier and faster.
+
+
+https://raygun.com/blog/unit-testing-frameworks-c/
+http://asp.net-hacker.rocks/2017/03/31/unit-testing-with-dotnetcore.html
+http://binary-notes.ru/choosing-of-the-unit-testing-framework/
+https://stackoverflow.com/questions/38063903/vs-2013-mstest-vs-nunit-vs-xunit
+https://cmatskas.com/unit-testing-with-net-core/
